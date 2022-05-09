@@ -93,8 +93,13 @@ def apply_formatting(sheet) -> None:
     for i, row in enumerate(sheet.rows):
         for j, cell in enumerate(row):
             cell.border = consts.THIN_BORDER
-            if i in [0, 1] or j == 2:
+            if i in [0, 1]:
+                cell.font = consts.FONT
+                cell.alignment = consts.TITLE_ALIGNMENT
+            elif j == 2:
                 cell.alignment = consts.WRAPPED_ALIGNMENT
+            elif j == 7:
+                cell.alignment = consts.RTA_ALIGNMENT
             else:
                 cell.alignment = consts.ALIGNMENT
 
@@ -109,6 +114,16 @@ def apply_sum_formula(
     _max = f'MAX(I{first_row}:I{next_row-1})'
     val = f'=IF(D{first_row}="MULT",SUM(I{first_row}:I{next_row-1}),{_max})'
     sheet.cell(row=row, column=col).value = val
+
+
+def apply_join_formula(
+    sheet,
+    row,
+    first_row,
+    next_row
+) -> None:
+    val = f'=TEXTJOIN("; ",FALSE,M{first_row}:M{next_row-1})'
+    sheet.cell(row=row, column=14).value = val
 
 
 def create_new_excel(file_path: str, categories) -> None:
@@ -149,9 +164,15 @@ def create_new_excel(file_path: str, categories) -> None:
                 sheet.cell(row=next_row, column=9).value = con_op
                 final_val = '=I%s*(100/SUM(J3:J100))' % next_row
                 sheet.cell(row=next_row, column=12).value = final_val
+                rta_and_value = f'=TEXTJOIN("=",TRUE,G{next_row},L{next_row})'
+                sheet.cell(row=next_row, column=13).value = rta_and_value
                 next_row += 1
 
             apply_sum_formula(sheet, first_row, 10, first_row, next_row)
+            apply_join_formula(sheet, first_row, first_row, next_row)
+            if pregunta.cant_respuestas > 0:
+                sheet.merge_cells(
+                    f"N{first_row}:N{first_row + pregunta.cant_respuestas -1}")
             to_format = '=IF(D{}="MULT",{},1)'
             sheet.cell(row=first_row, column=11).value = to_format.format(
                 first_row, pregunta.cant_respuestas)
@@ -169,7 +190,8 @@ def main() -> None:
     count = 0
     while not done:
         try:
-            create_new_excel(f'result-{count}.xlsx', categories)
+            create_new_excel(
+                f'parametros_de_evaluacion-{count}.xlsx', categories)
             done = True
         except PermissionError:
             count += 1

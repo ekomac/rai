@@ -1,3 +1,4 @@
+from openpyxl.styles import Font
 from openpyxl.styles.borders import Border, Side
 from openpyxl.styles import Alignment, PatternFill
 CATEGORIES = [
@@ -37,6 +38,8 @@ COLUMNS_TO_MERGE = [
     "J1:J2",
     "K1:K2",
     "L1:L2",
+    "M1:M2",
+    "N1:N2",
 ]
 
 COLS_REF = {
@@ -82,6 +85,8 @@ TITLES = [
     (1, 10, "SUMA TOTAL (PEOR CASO)"),          # J
     (1, 11, "PREGUNTAS TOTALES"),   # K
     (1, 12, "VALOR FINAL"),         # L
+    (1, 13, "VALORIZACION DE RESPUESTA"),        # M
+    (1, 14, "VALORIZACION DE PREGUNTA"),        # N
 ]
 
 TYPE_BOL = "BOL"
@@ -113,3 +118,17 @@ WRAPPED_ALIGNMENT = Alignment(horizontal='general',
                               wrap_text=True,
                               shrink_to_fit=False,
                               indent=0)
+TITLE_ALIGNMENT = Alignment(horizontal='general',
+                            vertical='center',
+                            text_rotation=0,
+                            wrap_text=True,
+                            shrink_to_fit=True,
+                            indent=0)
+RTA_ALIGNMENT = Alignment(horizontal='general',
+                          vertical='top',
+                          text_rotation=0,
+                          wrap_text=False,
+                          shrink_to_fit=True,
+                          indent=0)
+
+FONT = Font(bold=True)
