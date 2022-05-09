@@ -40,6 +40,7 @@ COLUMNS_TO_MERGE = [
     "L1:L2",
     "M1:M2",
     "N1:N2",
+    "O1:O2",
 ]
 
 COLS_REF = {
@@ -71,6 +72,13 @@ COLS_REF = {
     "VALOR_FINAL": {'title': (1, 12, "VALOR FINAL", ), 'col': 12},
 }
 
+RESUMEN_TITLES = [
+    (1, 1, "CATEGORIA"),
+    (1, 2, "ID PREGUNTA"),
+    (1, 3, "PREGUNTA"),
+    (1, 4, "VALORIZACION"),
+]
+
 TITLES = [
     (1, 1, "CATEGORIA"),            # A
     (1, 2, "PREGUNTA"),             # B
@@ -87,6 +95,7 @@ TITLES = [
     (1, 12, "VALOR FINAL"),         # L
     (1, 13, "VALORIZACION DE RESPUESTA"),        # M
     (1, 14, "VALORIZACION DE PREGUNTA"),        # N
+    (1, 15, "VALORIZACION FINAL"),        # O
 ]
 
 TYPE_BOL = "BOL"

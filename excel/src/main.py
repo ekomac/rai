@@ -1,3 +1,4 @@
+from utils import (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O)
 from typing import Union
 import openpyxl
 import consts
@@ -66,8 +67,8 @@ def merge_title_cells(sheet) -> None:
 
 
 def set_base_data(sheet, row, pregunta):
-    data = [(2, pregunta.id), (3, pregunta.pregunta),
-            (4, pregunta.tipo), (6, 1)]
+    data = [(B, pregunta.id), (C, pregunta.pregunta),
+            (D, pregunta.tipo), (F, 1)]
     for col, val in data:
         sheet.cell(row=row, column=col).value = val
 
@@ -79,14 +80,14 @@ def merge_cell_when_various_answers(
 ) -> None:
     if cant_rtas > 0:
         last_row = cant_rtas + next_row-1
-        for col in ['B', 'C', 'D', 'E', 'F']:
+        for col in 'BCDEF':
             sheet.merge_cells(
                 f"{col}{next_row}:{col}{last_row}")
             sheet.merge_cells(
-                f"K{next_row}:k{cant_rtas + next_row-1}")
+                f"K{next_row}:K{cant_rtas + next_row-1}")
             # Combinar las celdas de los valores indexados por pregunta
             sheet.merge_cells(
-                f"J{next_row}:j{cant_rtas + next_row-1}")
+                f"J{next_row}:J{cant_rtas + next_row-1}")
 
 
 def apply_formatting(sheet) -> None:
@@ -107,75 +108,138 @@ def apply_formatting(sheet) -> None:
 def apply_sum_formula(
     sheet,
     row,
-    col,
     first_row,
     next_row
 ) -> None:
     _max = f'MAX(I{first_row}:I{next_row-1})'
     val = f'=IF(D{first_row}="MULT",SUM(I{first_row}:I{next_row-1}),{_max})'
-    sheet.cell(row=row, column=col).value = val
+    sheet.cell(row=row, column=J).value = val
 
 
-def apply_join_formula(
+def apply_join_formulas(
     sheet,
     row,
     first_row,
     next_row
 ) -> None:
     val = f'=TEXTJOIN("; ",FALSE,M{first_row}:M{next_row-1})'
-    sheet.cell(row=row, column=14).value = val
+    sheet.cell(row=row, column=N).value = val
+    val = f'=TEXTJOIN("; "&CHAR(10),FALSE,M{first_row}:M{next_row-1})'
+    sheet.cell(row=row, column=O).value = val
+
+
+def add_to_summary_sheet(
+    summary_sheet,
+    pregunta
+) -> None:
+    row = len(list(summary_sheet.rows)) + 1
+    summary_sheet.cell(row=row, column=A).value = pregunta.categoria
+    summary_sheet.cell(row=row, column=B).value = pregunta.id
+    summary_sheet.cell(row=row, column=C).value = pregunta.pregunta
+    vlookup = f'=VLOOKUP(B{row},INDIRECT("\'"&A{row}&"\'' + \
+        '!B3:O100"),14,FALSE)'
+    summary_sheet.cell(row=row, column=D).value = vlookup
 
 
 def create_new_excel(file_path: str, categories) -> None:
+
+    # Create the excel file
     wb = openpyxl.Workbook()
+
+    # Create the summary sheet, which will hold the final data
+    wb.create_sheet("Resumen")
+
+    # Declare de summary sheet
+    summary_sheet = wb["Resumen"]
+
+    # Set the titles for summary sheet
+    for row, col, title in consts.RESUMEN_TITLES:
+        summary_sheet.cell(row=row, column=col).value = title
+
+    # Freeze first row for summary sheet
+    summary_sheet.freeze_panes = "A2"
+
+    # For each category key
     for key in categories:
+
+        # Create a sheet for the category, with
+        # the category name as the sheet name
         wb.create_sheet(key)
+
+        # Declare the sheet
         sheet = wb[key]
+
+        # Freeze the first and second rows
         sheet.freeze_panes = 'A3'
+
+        # Set the titles
         set_titles(sheet)
+        # Merge the title cells
         merge_title_cells(sheet)
-        next_row = 3
-        ult_fila = 3
+
+        # First row is number 3, cause title use first and second
+        curr_row = 3
+        # Holds the row number of the last row that
+        # will be used to the current category
+        last_row = 3
         for pregunta in categories[key]:
-            ult_fila += pregunta.cant_respuestas
-        ult_fila -= 1
+            last_row += pregunta.cant_respuestas
+        last_row -= 1
+
+        # Set the base data for each pregunta
         for pregunta in categories[key]:
-            # Coloca el id, la pregunta y la formula para
-            # el subtipo para cada pregunta
-            set_base_data(sheet, next_row, pregunta)
+
+            # Sets the id, question, type and subtype for each pregunta
+            set_base_data(sheet, curr_row, pregunta)
 
             # Paint cell when tipo is "undefined" (consts.UNDEFINED)
             if pregunta.tipo == consts.TYPE_UNDEFINED:
-                sheet.cell(row=next_row, column=4).fill = consts.UNDEFINED_FILL
+                sheet.cell(row=curr_row, column=D).fill = consts.UNDEFINED_FILL
 
+            # Merge the cells when the pregunta has several answers
             merge_cell_when_various_answers(
-                sheet, next_row, pregunta.cant_respuestas)
+                sheet, curr_row, pregunta.cant_respuestas)
 
-            first_row = next_row
+            # Resets first_row to match next_row, being the first_row
+            # the first row that will be used to the current pregunta
+            first_row = curr_row
+
+            # For each answer of the pregunta
             for i, respuesta in enumerate(pregunta.respuestas_as_list):
-                sheet.cell(row=next_row, column=1).value = pregunta.categoria
-                sheet.cell(row=next_row, column=7).value = respuesta
-                value_cell = sheet.cell(row=next_row, column=8)
+
+                # Set the answer data
+                sheet.cell(row=curr_row, column=A).value = pregunta.categoria
+                sheet.cell(row=curr_row, column=G).value = respuesta
+                sheet.cell(row=curr_row, column=E).value = "null"
+                value_cell = sheet.cell(row=curr_row, column=H)
                 # Get autocalculated value for each subtipo
                 value = get_value_calc_formula(
-                    first_row, next_row, pregunta, i)
+                    first_row, curr_row, pregunta, i)
                 value_cell.value = value
-                con_op = f'=H{next_row}*F{first_row}'
-                sheet.cell(row=next_row, column=9).value = con_op
-                final_val = '=I%s*(100/SUM(J3:J100))' % next_row
-                sheet.cell(row=next_row, column=12).value = final_val
-                rta_and_value = f'=TEXTJOIN("=",TRUE,G{next_row},L{next_row})'
-                sheet.cell(row=next_row, column=13).value = rta_and_value
-                next_row += 1
+                con_op = f'=H{curr_row}*F{first_row}'
+                sheet.cell(row=curr_row, column=I).value = con_op
+                final_val = '=ROUND(I%s*(100/SUM(J3:J100)),2)' % curr_row
+                sheet.cell(row=curr_row, column=L).value = final_val
 
-            apply_sum_formula(sheet, first_row, 10, first_row, next_row)
-            apply_join_formula(sheet, first_row, first_row, next_row)
+                # Create formula for joining the answer and it's value
+                rta_and_value = f'=TEXTJOIN("=",TRUE,G{curr_row},L{curr_row})'
+                # Set the formula to the cell
+                sheet.cell(row=curr_row, column=M).value = rta_and_value
+
+                # Increase row
+                curr_row += 1
+
+            apply_sum_formula(sheet, first_row, first_row, curr_row)
+            apply_join_formulas(sheet, first_row, first_row, curr_row)
             if pregunta.cant_respuestas > 0:
                 sheet.merge_cells(
                     f"N{first_row}:N{first_row + pregunta.cant_respuestas -1}")
+                sheet.merge_cells(
+                    f"O{first_row}:O{first_row + pregunta.cant_respuestas -1}")
             to_format = '=IF(D{}="MULT",{},1)'
-            sheet.cell(row=first_row, column=11).value = to_format.format(
+            sheet.cell(row=first_row, column=K).value = to_format.format(
                 first_row, pregunta.cant_respuestas)
+            add_to_summary_sheet(summary_sheet, pregunta)
 
         apply_formatting(sheet)
 
