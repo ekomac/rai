@@ -1,3 +1,4 @@
+from decimal import Decimal
 from utils import (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O)
 from typing import Union
 import openpyxl
@@ -18,40 +19,42 @@ def fill_categories_from_excel(
 
 
 def get_value_calc_formula(
-    subtipo_row,
+    row_signo,
     curr_row,
     pregunta,
     i_respuesta
 ) -> Union[str, int]:
-    if pregunta.tipo == consts.TYPE_VEC:
-        return '=IF(E{row}="+",{mas},IF(E{row}="-",{menos},0))'.format(
-            row=subtipo_row,
-            mas=100/pregunta.cant_respuestas*(i_respuesta+1),
-            menos=100/pregunta.cant_respuestas *
-            (pregunta.cant_respuestas - i_respuesta),
-        )
-    elif pregunta.tipo == consts.TYPE_VEX:
-        return '=IF(E{row}="+",{mas},IF(E{row}="-",{menos},0))'.format(
-            row=subtipo_row,
-            mas=100/pregunta.cant_respuestas*(i_respuesta+1),
-            menos=100/pregunta.cant_respuestas *
-            (pregunta.cant_respuestas - i_respuesta),
-        )
-    elif pregunta.tipo == consts.TYPE_VEM:
-        return '=IF(E{row}="+",{mas},IF(E{row}="-",{menos},0))'.format(
-            row=subtipo_row,
-            mas=100/pregunta.cant_respuestas*(i_respuesta+1),
-            menos=100/pregunta.cant_respuestas *
-            (pregunta.cant_respuestas - i_respuesta)
-        )
+    _100 = Decimal("100.0")
+    each_ans_minus_1 = Decimal(str(pregunta.cant_respuestas-1))
+    each_ans = Decimal(str(pregunta.cant_respuestas))
+    ans_num = Decimal(str(i_respuesta))
+    ans_num_reversed = Decimal(str(pregunta.cant_respuestas - i_respuesta - 1))
+    scalar_types = [consts.TYPE_VEM, consts.TYPE_VEX, consts.TYPE_VEC]
+    if pregunta.tipo in scalar_types:
+        # mas = Decimal(_100 / each_ans * ans_num).quantize(Decimal("1"))
+        mas_mas = Decimal(_100 / each_ans * (ans_num+1)
+                          ).quantize(Decimal("1"))
+        mas_menos = Decimal(_100 / each_ans_minus_1 *
+                            ans_num).quantize(Decimal("1"))
+        # menos = Decimal(_100 / each_ans *
+        #                 ans_num_reversed).quantize(Decimal("1"))
+        menos_mas = Decimal(_100 / each_ans *
+                            (ans_num_reversed+1)).quantize(Decimal("1"))
+        menos_menos = Decimal(
+            _100 / each_ans_minus_1 * ans_num_reversed).quantize(Decimal("1"))
+        return (f'=IF(OR(E{row_signo}="++", E{row_signo}="+-"),'
+                f'IF(E{row_signo}="++",{mas_mas},{mas_menos}),'
+                f'IF(OR(E{row_signo}="-+",E{row_signo}="--"),'
+                f'IF(E{row_signo}="-+",{menos_mas},{menos_menos}),0))')
     elif pregunta.tipo == consts.TYPE_BOL:
         return ('=IF(OR(AND(E{0}="+", G{1}="Si"),'
                 ' AND(E{0}="-", G{1}="No")), 100, 0)').format(
-            subtipo_row, curr_row)
+            row_signo, curr_row)
     elif pregunta.cant_respuestas > 0:
-        val = 100 / pregunta.cant_respuestas
-        return '=IF(D{}="MULT",{},IF(D{}="SING",100,0))'.format(
-            subtipo_row, val, subtipo_row
+        val = _100 / Decimal(str(pregunta.cant_respuestas-1))
+        val = val.quantize(Decimal("1"))
+        return '=IF(D{}="MULT",{},IF(D{}="SING","modif",0))'.format(
+            row_signo, val, row_signo
         )
     return 0
 
@@ -204,13 +207,13 @@ def create_new_excel(file_path: str, categories) -> None:
             # the first row that will be used to the current pregunta
             first_row = curr_row
 
+            sheet.cell(row=first_row, column=E).value = "null"
             # For each answer of the pregunta
             for i, respuesta in enumerate(pregunta.respuestas_as_list):
 
                 # Set the answer data
                 sheet.cell(row=curr_row, column=A).value = pregunta.categoria
                 sheet.cell(row=curr_row, column=G).value = respuesta
-                sheet.cell(row=curr_row, column=E).value = "null"
                 value_cell = sheet.cell(row=curr_row, column=H)
                 # Get autocalculated value for each subtipo
                 value = get_value_calc_formula(
