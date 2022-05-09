@@ -90,10 +90,10 @@ def merge_cell_when_various_answers(
 
 
 def apply_formatting(sheet) -> None:
-    for row in sheet.rows:
-        for i, cell in enumerate(row):
+    for i, row in enumerate(sheet.rows):
+        for j, cell in enumerate(row):
             cell.border = consts.THIN_BORDER
-            if i == 2:
+            if i in [0, 1] or j == 2:
                 cell.alignment = consts.WRAPPED_ALIGNMENT
             else:
                 cell.alignment = consts.ALIGNMENT
@@ -116,6 +116,7 @@ def create_new_excel(file_path: str, categories) -> None:
     for key in categories:
         wb.create_sheet(key)
         sheet = wb[key]
+        sheet.freeze_panes = 'A3'
         set_titles(sheet)
         merge_title_cells(sheet)
         next_row = 3

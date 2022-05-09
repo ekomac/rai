@@ -74,12 +74,12 @@ TITLES = [
     (2, 2, "ID"),                   # B
     (2, 3, "PREGUNTA"),             # C
     (2, 4, "TIPO"),                 # D
-    (2, 5, "SUBTIPO"),              # E
+    (2, 5, "SIGNO"),              # E
     (2, 6, "OP"),                   # F
     (1, 7, "RTA"),                  # G
     (1, 8, "VALOR"),                # H
     (1, 9, "CON OP"),               # I
-    (1, 10, "SUMA TOTAL"),          # J
+    (1, 10, "SUMA TOTAL (PEOR CASO)"),          # J
     (1, 11, "PREGUNTAS TOTALES"),   # K
     (1, 12, "VALOR FINAL"),         # L
 ]
