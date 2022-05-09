@@ -33,6 +33,7 @@ class Pregunta:
         self.cant_respuestas = len(
             self.respuestas_as_list) if self.respuestas else 0
         self.__set_tipo()
+        print("La pregunta", self.pregunta, "es de tipo", self.tipo)
         self.__update_respuestas_if_none()
 
     def __set_tipo(self):
@@ -43,22 +44,21 @@ class Pregunta:
         if self.cant_respuestas == 5:
             if all(x in self.respuestas_as_list for x in list(range(1, 6))):
                 self.tipo = self.TYPE_VEM
-                return
         if self.cant_respuestas > 5:
             if all(x in self.respuestas_as_list for x in list(range(1, 6))):
                 self.tipo = self.TYPE_VEX
-                return
         if self.cant_respuestas >= 3:
             count = 0
-            vecs = ['mas de', 'mas que' 'entre',
+            vecs = ['mas de', 'mas que', 'entre',
                     'hace', 'menos de', 'menos que',
-                    'nunca', 'siempre', ]
+                    'nunca', 'siempre', 'cada']
             for rta in self.respuestas_as_list:
                 if isinstance(rta, str):
                     resp = unidecode.unidecode(rta.lower())
-                    if any(x in resp for x in vecs):
+                    if any(vec in resp for vec in vecs):
                         count += 1
                     if count > 1:
+                        print("count es", count)
                         self.tipo = self.TYPE_VEC
                         return
 
